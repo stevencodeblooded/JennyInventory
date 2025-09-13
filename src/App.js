@@ -298,7 +298,7 @@ function App() {
         <div className="App">
           <AppRoutes />
           <Toaster
-            position="top-right"
+            position="center"
             toastOptions={{
               duration: 4000,
               style: {

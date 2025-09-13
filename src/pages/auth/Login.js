@@ -1,5 +1,5 @@
 // src/pages/auth/Login.js
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -97,7 +97,7 @@ const Login = () => {
                 Email Address
               </label>
               <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
                   <EnvelopeIcon className="h-5 w-5 text-secondary-400" />
                 </div>
                 <input
@@ -127,7 +127,7 @@ const Login = () => {
                 Password
               </label>
               <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
                   <LockClosedIcon className="h-5 w-5 text-secondary-400" />
                 </div>
                 <input
@@ -213,13 +213,6 @@ const Login = () => {
             <div className="text-xs text-yellow-700 space-y-1">
               <p>
                 <strong>Owner:</strong> admin@jennysaleflow.com / Admin@123
-              </p>
-              <p>
-                <strong>Operator:</strong> operator@jennysaleflow.com /
-                Operator@123
-              </p>
-              <p>
-                <strong>Viewer:</strong> viewer@jennysaleflow.com / Viewer@123
               </p>
             </div>
           </div>

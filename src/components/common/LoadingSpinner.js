@@ -21,7 +21,7 @@ const LoadingSpinner = ({
   };
 
   const Spinner = () => (
-    <div className={`inline-flex items-center ${fullScreen ? "flex-col" : ""}`}>
+    <div className={`justify-center items-center ${fullScreen ? "flex-col" : ""}`}>
       <svg
         className={`animate-spin ${sizeClasses[size]} text-primary-600`}
         fill="none"

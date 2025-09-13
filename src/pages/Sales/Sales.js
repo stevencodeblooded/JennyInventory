@@ -631,7 +631,7 @@ const Sales = () => {
                 : 'Get started by making your first sale'}
             </p>
             {getFilterCount() === 0 && (
-              <Link to="/pos" className="btn-primary">
+              <Link to="/pos" className="btn-primary flex items-center justify-center w-fit mx-auto">
                 <CurrencyDollarIcon className="h-5 w-5 mr-2" />
                 New Sale
               </Link>

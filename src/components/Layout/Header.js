@@ -87,7 +87,7 @@ const Header = ({ setSidebarOpen }) => {
 
             {/* Notifications dropdown */}
             {showNotifications && (
-              <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
                 <div className="py-1">
                   <div className="px-4 py-2 border-b border-secondary-200">
                     <h3 className="text-sm font-medium text-secondary-900">
@@ -150,7 +150,7 @@ const Header = ({ setSidebarOpen }) => {
 
             {/* User dropdown menu */}
             {showUserMenu && (
-              <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
                 <div className="py-1">
                   <Link
                     to="/profile"
