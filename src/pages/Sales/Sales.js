@@ -12,8 +12,6 @@ import {
   EyeIcon,
   PrinterIcon,
   XCircleIcon,
-  ArrowPathIcon,
-  CalendarDaysIcon,
   CurrencyDollarIcon,
   ReceiptRefundIcon,
 } from '@heroicons/react/24/outline';
@@ -207,9 +205,11 @@ const Sales = () => {
                 <CurrencyDollarIcon className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-secondary-600">Today's Revenue</p>
+                <p className="text-sm font-medium text-secondary-600">
+                  Today's Revenue
+                </p>
                 <p className="text-xl font-bold text-secondary-900">
-                  {formatCurrency(dailySummary.summary.totalTax || 0)}
+                  {formatCurrency(dailySummary.summary.totalRevenue || 0)}
                 </p>
               </div>
             </div>
@@ -219,7 +219,8 @@ const Sales = () => {
 
       {/* Search and Filters */}
       <div className="card">
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* Search Row */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-stretch">
           {/* Search */}
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-secondary-400" />
@@ -228,14 +229,16 @@ const Sales = () => {
               placeholder="Search by receipt number..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-4 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 h-11"
             />
           </div>
 
           {/* Filter Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`btn-secondary relative ${showFilters ? 'bg-secondary-200' : ''}`}
+            className={`btn-secondary relative flex items-center justify-center h-11 ${
+              showFilters ? "bg-secondary-200" : ""
+            }`}
           >
             <FunnelIcon className="h-5 w-5 mr-2" />
             Filters
@@ -259,7 +262,9 @@ const Sales = () => {
                 <input
                   type="date"
                   value={filters.startDate}
-                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange("startDate", e.target.value)
+                  }
                   className="input-field"
                 />
               </div>
@@ -271,24 +276,28 @@ const Sales = () => {
                 <input
                   type="date"
                   value={filters.endDate}
-                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange("endDate", e.target.value)
+                  }
                   className="input-field"
                 />
               </div>
 
               {/* Seller Filter (only for owners/managers) */}
-              {hasPermission('users', 'manage') && (
+              {hasPermission("users", "manage") && (
                 <div>
                   <label className="block text-sm font-medium text-secondary-700 mb-1">
                     Seller
                   </label>
                   <select
                     value={filters.seller}
-                    onChange={(e) => handleFilterChange('seller', e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("seller", e.target.value)
+                    }
                     className="input-field"
                   >
                     <option value="">All Sellers</option>
-                    {users.map(user => (
+                    {users.map((user) => (
                       <option key={user._id} value={user._id}>
                         {user.name}
                       </option>
@@ -304,7 +313,9 @@ const Sales = () => {
                 </label>
                 <select
                   value={filters.paymentMethod}
-                  onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange("paymentMethod", e.target.value)
+                  }
                   className="input-field"
                 >
                   <option value="">All Methods</option>
@@ -324,7 +335,7 @@ const Sales = () => {
                 </label>
                 <select
                   value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  onChange={(e) => handleFilterChange("status", e.target.value)}
                   className="input-field"
                 >
                   <option value="">All Status</option>
@@ -344,7 +355,9 @@ const Sales = () => {
                   type="number"
                   placeholder="0"
                   value={filters.minAmount}
-                  onChange={(e) => handleFilterChange('minAmount', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange("minAmount", e.target.value)
+                  }
                   className="input-field"
                   min="0"
                   step="0.01"
@@ -359,7 +372,9 @@ const Sales = () => {
                   type="number"
                   placeholder="1000000"
                   value={filters.maxAmount}
-                  onChange={(e) => handleFilterChange('maxAmount', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange("maxAmount", e.target.value)
+                  }
                   className="input-field"
                   min="0"
                   step="0.01"
@@ -397,7 +412,7 @@ const Sales = () => {
                     <th className="table-header">Receipt</th>
                     <th className="table-header">Date & Time</th>
                     <th className="table-header">Customer</th>
-                    {hasPermission('users', 'manage') && (
+                    {hasPermission("users", "manage") && (
                       <th className="table-header">Seller</th>
                     )}
                     <th className="table-header">Items</th>
@@ -410,7 +425,7 @@ const Sales = () => {
                 <tbody className="bg-white divide-y divide-secondary-200">
                   {sales.map((sale) => {
                     const paymentStatus = getPaymentStatus(sale.payment.status);
-                    
+
                     return (
                       <tr key={sale._id} className="hover:bg-secondary-50">
                         <td className="table-cell">
@@ -442,10 +457,10 @@ const Sales = () => {
                             <span className="text-secondary-500">Walk-in</span>
                           )}
                         </td>
-                        {hasPermission('users', 'manage') && (
+                        {hasPermission("users", "manage") && (
                           <td className="table-cell">
                             <span className="text-sm text-secondary-900">
-                              {sale.seller?.name || 'Unknown'}
+                              {sale.seller?.name || "Unknown"}
                             </span>
                           </td>
                         )}
@@ -456,11 +471,13 @@ const Sales = () => {
                         </td>
                         <td className="table-cell">
                           <div className="flex items-center">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentStatus.bgColor} ${paymentStatus.color}`}>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentStatus.bgColor} ${paymentStatus.color}`}
+                            >
                               {paymentStatus.text}
                             </span>
                             <span className="ml-2 text-sm text-secondary-600 capitalize">
-                              {sale.payment.method.replace('_', ' ')}
+                              {sale.payment.method.replace("_", " ")}
                             </span>
                           </div>
                         </td>
@@ -470,17 +487,26 @@ const Sales = () => {
                           </span>
                         </td>
                         <td className="table-cell">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            sale.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            sale.status === 'voided' ? 'bg-red-100 text-red-800' :
-                            sale.status === 'refunded' ? 'bg-purple-100 text-purple-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {sale.status === 'completed' ? 'Completed' :
-                             sale.status === 'voided' ? 'Voided' :
-                             sale.status === 'refunded' ? 'Refunded' :
-                             sale.status === 'partial_refund' ? 'Partial Refund' :
-                             sale.status}
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              sale.status === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : sale.status === "voided"
+                                ? "bg-red-100 text-red-800"
+                                : sale.status === "refunded"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {sale.status === "completed"
+                              ? "Completed"
+                              : sale.status === "voided"
+                              ? "Voided"
+                              : sale.status === "refunded"
+                              ? "Refunded"
+                              : sale.status === "partial_refund"
+                              ? "Partial Refund"
+                              : sale.status}
                           </span>
                         </td>
                         <td className="table-cell">
@@ -492,7 +518,7 @@ const Sales = () => {
                             >
                               <EyeIcon className="h-4 w-4" />
                             </Link>
-                            
+
                             <button
                               onClick={() => printReceipt(sale._id)}
                               className="text-blue-400 hover:text-blue-600"
@@ -500,16 +526,19 @@ const Sales = () => {
                             >
                               <PrinterIcon className="h-4 w-4" />
                             </button>
-                            
-                            {hasPermission('sales', 'void') && sale.status === 'completed' && (
-                              <button
-                                onClick={() => voidSale(sale._id, sale.receiptNumber)}
-                                className="text-red-400 hover:text-red-600"
-                                title="Void Sale"
-                              >
-                                <XCircleIcon className="h-4 w-4" />
-                              </button>
-                            )}
+
+                            {hasPermission("sales", "void") &&
+                              sale.status === "completed" && (
+                                <button
+                                  onClick={() =>
+                                    voidSale(sale._id, sale.receiptNumber)
+                                  }
+                                  className="text-red-400 hover:text-red-600"
+                                  title="Void Sale"
+                                >
+                                  <XCircleIcon className="h-4 w-4" />
+                                </button>
+                              )}
                           </div>
                         </td>
                       </tr>
@@ -542,16 +571,20 @@ const Sales = () => {
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-secondary-700">
-                        Showing{' '}
+                        Showing{" "}
                         <span className="font-medium">
                           {(pagination.page - 1) * pagination.limit + 1}
-                        </span>{' '}
-                        to{' '}
+                        </span>{" "}
+                        to{" "}
                         <span className="font-medium">
-                          {Math.min(pagination.page * pagination.limit, pagination.total)}
-                        </span>{' '}
-                        of{' '}
-                        <span className="font-medium">{pagination.total}</span> results
+                          {Math.min(
+                            pagination.page * pagination.limit,
+                            pagination.total
+                          )}
+                        </span>{" "}
+                        of{" "}
+                        <span className="font-medium">{pagination.total}</span>{" "}
+                        results
                       </p>
                     </div>
                     <div>
@@ -563,16 +596,17 @@ const Sales = () => {
                         >
                           Previous
                         </button>
-                        
+
                         {[...Array(pagination.pages)].map((_, index) => {
                           const page = index + 1;
                           const isCurrentPage = page === pagination.page;
-                          
+
                           // Show only a few pages around current page
                           if (
                             page === 1 ||
                             page === pagination.pages ||
-                            (page >= pagination.page - 2 && page <= pagination.page + 2)
+                            (page >= pagination.page - 2 &&
+                              page <= pagination.page + 2)
                           ) {
                             return (
                               <button
@@ -580,8 +614,8 @@ const Sales = () => {
                                 onClick={() => handlePageChange(page)}
                                 className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                                   isCurrentPage
-                                    ? 'z-10 bg-primary-50 border-primary-500 text-primary-600'
-                                    : 'bg-white border-secondary-300 text-secondary-500 hover:bg-secondary-50'
+                                    ? "z-10 bg-primary-50 border-primary-500 text-primary-600"
+                                    : "bg-white border-secondary-300 text-secondary-500 hover:bg-secondary-50"
                                 }`}
                               >
                                 {page}
@@ -602,7 +636,7 @@ const Sales = () => {
                           }
                           return null;
                         })}
-                        
+
                         <button
                           onClick={() => handlePageChange(pagination.page + 1)}
                           disabled={pagination.page === pagination.pages}
@@ -627,11 +661,14 @@ const Sales = () => {
             </h3>
             <p className="text-secondary-600 mb-4">
               {getFilterCount() > 0
-                ? 'Try adjusting your search criteria or filters'
-                : 'Get started by making your first sale'}
+                ? "Try adjusting your search criteria or filters"
+                : "Get started by making your first sale"}
             </p>
             {getFilterCount() === 0 && (
-              <Link to="/pos" className="btn-primary flex items-center justify-center w-fit mx-auto">
+              <Link
+                to="/pos"
+                className="btn-primary flex items-center justify-center w-fit mx-auto"
+              >
                 <CurrencyDollarIcon className="h-5 w-5 mr-2" />
                 New Sale
               </Link>

@@ -1,5 +1,4 @@
 // src/App.js
-import React from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -27,11 +26,9 @@ import CreateOrder from "./pages/Orders/CreateOrder";
 import Customers from "./pages/Customers/Customers";
 import CustomerDetail from "./pages/Customers/CustomerDetail";
 import AddCustomer from "./pages/Customers/AddCustomer";
-import Reports from "./pages/Reports/Reports";
-import SalesReport from "./pages/Reports/SalesReport";
-import InventoryReport from "./pages/Reports/InventoryReport";
 import Users from "./pages/Users/Users";
 import UserDetail from "./pages/Users/UserDetail";
+import UserEdit from "./pages/Users/editUser";
 import Settings from "./pages/Settings/Settings";
 import Profile from "./pages/Profile/Profile";
 import LoadingSpinner from "./components/common/LoadingSpinner";
@@ -227,32 +224,6 @@ function AppRoutes() {
           }
         />
 
-        {/* Reports */}
-        <Route
-          path="reports"
-          element={
-            <ProtectedRoute requiredPermission="reports.view">
-              <Reports />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="reports/sales"
-          element={
-            <ProtectedRoute requiredPermission="reports.view">
-              <SalesReport />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="reports/inventory"
-          element={
-            <ProtectedRoute requiredPermission="reports.view">
-              <InventoryReport />
-            </ProtectedRoute>
-          }
-        />
-
         {/* Users */}
         <Route
           path="users"
@@ -267,6 +238,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredPermission="users.manage">
               <UserDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="users/:id/edit"
+          element={
+            <ProtectedRoute requiredPermission="users.update">
+              <UserEdit />
             </ProtectedRoute>
           }
         />

@@ -1,6 +1,4 @@
 // src/components/common/LoadingSpinner.js
-import React from "react";
-
 const LoadingSpinner = ({
   size = "default",
   text = "Loading...",

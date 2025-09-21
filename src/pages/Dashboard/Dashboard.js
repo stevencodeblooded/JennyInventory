@@ -14,6 +14,7 @@ import {
   ArrowDownIcon,
   ClockIcon,
   CheckCircleIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import {
   LineChart,
@@ -23,8 +24,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
 } from "recharts";
 
 const Dashboard = () => {
@@ -159,13 +158,13 @@ const Dashboard = () => {
                 <p className="text-sm font-medium text-secondary-600">
                   {stat.name}
                 </p>
-                <div className="flex items-center">
+                <div className="flex items-center flex-wrap gap-1">
                   <p className="text-2xl font-bold text-secondary-900">
                     {stat.value}
                   </p>
                   {stat.change !== 0 && (
                     <div
-                      className={`ml-2 flex items-center text-sm ${
+                      className={`flex items-center text-sm ${
                         stat.change > 0 ? "text-green-600" : "text-red-600"
                       }`}
                     >
@@ -193,7 +192,7 @@ const Dashboard = () => {
               Sales Trend
             </h3>
             <Link
-              to="/reports/sales"
+              to="/reports"
               className="text-primary-600 hover:text-primary-700 text-sm"
             >
               View Report
@@ -285,7 +284,7 @@ const Dashboard = () => {
               Stock Alerts
             </h3>
             <Link
-              to="/products?filter=low-stock"
+              to="/products?stockStatus=low_stock"
               className="text-primary-600 hover:text-primary-700 text-sm"
             >
               View All
@@ -397,21 +396,23 @@ const Dashboard = () => {
           </Link>
 
           <Link
-            to="/orders/create"
+            to="/sales"
             className="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200"
           >
             <ClockIcon className="h-8 w-8 text-green-600 mb-2" />
             <span className="text-sm font-medium text-green-700">
-              New Order
+              Manage Sales
             </span>
           </Link>
 
           <Link
-            to="/reports"
+            to="/users"
             className="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors duration-200"
           >
-            <ExclamationTriangleIcon className="h-8 w-8 text-purple-600 mb-2" />
-            <span className="text-sm font-medium text-purple-700">Reports</span>
+            <UserGroupIcon className="h-8 w-8 text-purple-600 mb-2" />
+            <span className="text-sm font-medium text-purple-700">
+              Manage User Accounts
+            </span>
           </Link>
         </div>
       </div>

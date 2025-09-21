@@ -190,7 +190,7 @@ const Products = () => {
 
       {/* Search and Filters */}
       <div className="card">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-stretch">
           {/* Search */}
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-secondary-400" />
@@ -199,14 +199,14 @@ const Products = () => {
               placeholder="Search products by name, SKU, or barcode..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 h-11"
             />
           </div>
 
           {/* Filter Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`btn-secondary relative ${
+            className={`btn-secondary relative flex items-center justify-center h-11 ${
               showFilters ? "bg-secondary-200" : ""
             }`}
           >

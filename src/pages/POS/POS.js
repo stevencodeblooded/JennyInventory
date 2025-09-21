@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { productsAPI, salesAPI, customersAPI } from "../../services/api";
-import { formatCurrency, calculateTax } from "../../utils/helpers";
+import { formatCurrency } from "../../utils/helpers";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
 import {
@@ -29,6 +29,9 @@ const POS = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [amountPaid, setAmountPaid] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [mpesaPhone, setMpesaPhone] = useState("");
+  const [mpesaPaymentStatus, setMpesaPaymentStatus] = useState(null); // 'pending', 'success', 'failed'
+  const [mpesaTransactionId, setMpesaTransactionId] = useState("");
 
   useEffect(() => {
     fetchProducts();
@@ -121,6 +124,27 @@ const POS = () => {
     );
   };
 
+  const updateLocalProductStock = (cartItems) => {
+    setProducts((prevProducts) =>
+      prevProducts.map((product) => {
+        const soldItem = cartItems.find((item) => item.product === product._id);
+        if (soldItem) {
+          return {
+            ...product,
+            inventory: {
+              ...product.inventory,
+              currentStock: Math.max(
+                0,
+                product.inventory.currentStock - soldItem.quantity
+              ),
+            },
+          };
+        }
+        return product;
+      })
+    );
+  };
+
   const removeFromCart = (productId) => {
     setCart(cart.filter((item) => item.product !== productId));
   };
@@ -128,6 +152,10 @@ const POS = () => {
   const clearCart = () => {
     setCart([]);
     setSelectedCustomer(null);
+    setAmountPaid("");
+    setMpesaPhone("");
+    setMpesaPaymentStatus(null);
+    setMpesaTransactionId("");
   };
 
   const calculateTotals = () => {
@@ -135,12 +163,10 @@ const POS = () => {
       (sum, item) => sum + item.unitPrice * item.quantity,
       0
     );
-    const tax = calculateTax(subtotal, 16, false);
 
     return {
       subtotal,
-      tax: tax.taxAmount,
-      total: tax.grossAmount,
+      total: subtotal, // ADD THIS - since you removed tax, total = subtotal
     };
   };
 
@@ -151,23 +177,101 @@ const POS = () => {
     }
 
     const totals = calculateTotals();
-    const paidAmount = parseFloat(amountPaid) || 0;
 
-    if (paymentMethod === "cash" && paidAmount < totals.total) {
-      toast.error("Amount paid is less than total");
-      return;
+    // Validate payment method specific requirements
+    if (paymentMethod === "cash") {
+      const paidAmount = parseFloat(amountPaid) || 0;
+      if (paidAmount < totals.subtotal) {
+        toast.error("Amount paid is less than total");
+        return;
+      }
+    } else if (paymentMethod === "mpesa") {
+      if (!mpesaPhone || mpesaPhone.length < 10) {
+        toast.error("Please enter a valid M-Pesa phone number");
+        return;
+      }
     }
 
     try {
       setProcessing(true);
 
+      let paymentData;
+
+      if (paymentMethod === "mpesa") {
+        // Show loading toast and store the toast ID
+        const loadingToast = toast.loading("Initiating M-Pesa payment...");
+
+        try {
+          const mpesaResult = await initiateMpesaPayment(totals);
+
+          // Dismiss the loading toast
+          toast.dismiss(loadingToast);
+
+          if (!mpesaResult.success) {
+            toast.error("M-Pesa payment failed");
+            return;
+          }
+
+          // Show success message
+          toast.success("M-Pesa payment completed!");
+
+          paymentData = {
+            method: paymentMethod,
+            status: "paid",
+            totalPaid: totals.total,
+            change: 0,
+            details: [
+              {
+                method: paymentMethod,
+                amount: totals.total,
+                transactionId: mpesaResult.transactionId,
+              },
+            ],
+          };
+        } catch (error) {
+          // Dismiss loading toast and show error
+          toast.dismiss(loadingToast);
+          toast.error("M-Pesa payment failed");
+          return;
+        }
+      } else {
+        // Cash payment
+        const paidAmount = parseFloat(amountPaid) || 0;
+        paymentData = {
+          method: paymentMethod,
+          status: "paid",
+          totalPaid: paidAmount,
+          change: paidAmount - totals.total,
+          details: [
+            {
+              method: paymentMethod,
+              amount: paidAmount,
+            },
+          ],
+        };
+      }
+
       const saleData = {
-        items: cart.map((item) => ({
-          product: item.product,
-          productName: item.productName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-        })),
+        items: cart.map((item) => {
+          const itemSubtotal = item.unitPrice * item.quantity;
+
+          return {
+            product: item.product,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            discount: {
+              amount: 0,
+              percentage: 0,
+            },
+            subtotal: itemSubtotal,
+          };
+        }),
+        totals: {
+          subtotal: 0, // Pre-save hook will calculate this
+          discount: 0,
+          total: 0, // Pre-save hook will calculate this
+        },
         customer: selectedCustomer?._id,
         customerInfo: selectedCustomer
           ? {
@@ -176,18 +280,7 @@ const POS = () => {
               email: selectedCustomer.email,
             }
           : undefined,
-        payment: {
-          method: paymentMethod,
-          status: "paid",
-          totalPaid: paidAmount,
-          change: paymentMethod === "cash" ? paidAmount - totals.total : 0,
-          details: [
-            {
-              method: paymentMethod,
-              amount: paidAmount,
-            },
-          ],
-        },
+        payment: paymentData,
       };
 
       const response = await salesAPI.createSale(saleData);
@@ -195,9 +288,15 @@ const POS = () => {
 
       toast.success("Sale completed successfully!");
 
+      // UPDATE LOCAL STOCK COUNTS - ADD THIS LINE:
+      updateLocalProductStock(cart);
+
       // Clear cart and reset form
       clearCart();
       setAmountPaid("");
+      setMpesaPhone("");
+      setMpesaPaymentStatus(null);
+      setMpesaTransactionId("");
       setPaymentMethod("cash");
       setShowPaymentModal(false);
 
@@ -223,9 +322,71 @@ const POS = () => {
     }
   };
 
+  const initiateMpesaPayment = async (totals) => {
+    try {
+      setMpesaPaymentStatus("pending");
+
+      const response = await salesAPI.initiateMpesaPayment({
+        phone: mpesaPhone,
+        amount: totals.total,
+      });
+
+      console.log("CheckoutRequestId:", response.data?.data?.checkoutRequestId);
+
+      const checkoutRequestId = response.data?.data?.checkoutRequestId;
+
+      if (!checkoutRequestId) {
+        console.error("No checkoutRequestId found in response");
+        setMpesaPaymentStatus("failed");
+        throw new Error("Invalid response from M-Pesa service");
+      }
+
+      // Return a promise that resolves when payment is complete
+      return new Promise((resolve) => {
+        const pollPaymentStatus = async () => {
+          try {
+            console.log("Polling status for:", checkoutRequestId); // Add this debug log
+
+            const statusResponse = await salesAPI.checkMpesaPaymentStatus(
+              checkoutRequestId
+            );
+            console.log("Status response:", statusResponse.data); // Add this debug log
+
+            const { status, transactionId } = statusResponse.data.data;
+
+            if (status === "success") {
+              setMpesaPaymentStatus("success");
+              setMpesaTransactionId(transactionId);
+              resolve({ success: true, transactionId });
+            } else if (status === "failed") {
+              setMpesaPaymentStatus("failed");
+              resolve({ success: false });
+            } else {
+              // Still pending, poll again
+              setTimeout(pollPaymentStatus, 3000);
+            }
+          } catch (error) {
+            console.error("Status polling error:", error);
+            setMpesaPaymentStatus("failed");
+            resolve({ success: false });
+          }
+        };
+
+        // Start polling after 2 seconds
+        setTimeout(pollPaymentStatus, 2000);
+      });
+    } catch (error) {
+      console.error("M-Pesa initiation error:", error);
+      setMpesaPaymentStatus("failed");
+      throw error;
+    }
+  };
+
   const totals = calculateTotals();
   const change =
-    paymentMethod === "cash" ? (parseFloat(amountPaid) || 0) - totals.total : 0;
+      paymentMethod === "cash"
+        ? (parseFloat(amountPaid) || 0) - totals.subtotal
+        : 0;
 
   return (
     <div className="h-full flex">
@@ -267,8 +428,9 @@ const POS = () => {
                 <div
                   key={product._id}
                   onClick={() => addToCart(product)}
-                  className="bg-white border border-secondary-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                  className="bg-white border border-secondary-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer flex flex-col"
                 >
+                  {/* Product Image */}
                   <div className="aspect-square bg-secondary-100 rounded-lg mb-3 flex items-center justify-center">
                     {product.images?.[0]?.url ? (
                       <img
@@ -284,21 +446,27 @@ const POS = () => {
                     )}
                   </div>
 
-                  <h3 className="font-medium text-secondary-900 mb-1 truncate">
-                    {product.name}
-                  </h3>
+                  {/* Product Info */}
+                  <div className="flex flex-col flex-1">
+                    {/* Product Name */}
+                    <h3 className="font-medium text-secondary-900 mb-1 line-clamp-1">
+                      {product.name}
+                    </h3>
 
-                  <p className="text-sm text-secondary-600 mb-2">
-                    SKU: {product.sku}
-                  </p>
+                    {/* SKU (truncate to prevent wrapping) */}
+                    <p className="text-sm text-secondary-600 mb-2 truncate">
+                      SKU: {product.sku}
+                    </p>
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-primary-600">
-                      {formatCurrency(product.pricing.sellingPrice)}
-                    </span>
-                    <span className="text-xs text-secondary-500">
-                      Stock: {product.inventory.currentStock}
-                    </span>
+                    {/* Price & Stock - SOLUTION 1: Stacked vertically */}
+                    <div className="mt-auto space-y-1">
+                      <div className="text-lg font-bold text-primary-600">
+                        {formatCurrency(product.pricing.sellingPrice)}
+                      </div>
+                      <div className="text-xs text-right text-green-800 font-semibold">
+                        Stock: {product.inventory.currentStock}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -319,11 +487,19 @@ const POS = () => {
       </div>
 
       {/* Cart Section */}
-      <div className="w-96 bg-white border-l border-secondary-200 flex flex-col">
+      <div
+        className="w-96 bg-white border-l border-secondary-200 flex flex-col"
+        style={{ height: "60vh" }}
+      >
         {/* Cart Header */}
         <div className="p-4 border-b border-secondary-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-secondary-900">Cart</h2>
+            {cart.length > 0 && (
+              <span className="ml-2 bg-primary-100 text-primary-800 text-xs font-medium px-2 py-1 rounded-full">
+                {cart.length}
+              </span>
+            )}
             {cart.length > 0 && (
               <button
                 onClick={clearCart}
@@ -351,113 +527,106 @@ const POS = () => {
         </div>
 
         {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 flex flex-col min-h-10">
           {cart.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-secondary-400 mb-4">
-                <div className="text-4xl">🛒</div>
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="text-center">
+                <div className="text-secondary-400 mb-4">
+                  <div className="text-4xl">🛒</div>
+                </div>
+                <p className="text-secondary-600">Cart is empty</p>
+                <p className="text-sm text-secondary-500">
+                  Add products to start a sale
+                </p>
               </div>
-              <p className="text-secondary-600">Cart is empty</p>
-              <p className="text-sm text-secondary-500">
-                Add products to start a sale
-              </p>
             </div>
           ) : (
-            <div className="p-4 space-y-3">
-              {cart.map((item) => (
-                <div
-                  key={item.product}
-                  className="bg-secondary-50 rounded-lg p-3"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-secondary-900 text-sm">
-                        {item.productName}
-                      </h4>
-                      <p className="text-xs text-secondary-500">
-                        SKU: {item.sku}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => removeFromCart(item.product)}
-                      className="text-red-500 hover:text-red-700"
+            <>
+              {/* Scrollable cart items */}
+              <div className="flex-1 overflow-y-auto p-4 pb-0">
+                <div className="space-y-3 pb-4">
+                  {cart.map((item) => (
+                    <div
+                      key={item.product}
+                      className="bg-secondary-50 rounded-lg p-3 border-l-4 border-primary-200"
                     >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.product, item.quantity - 1)
-                        }
-                        className="w-6 h-6 bg-white border border-secondary-300 rounded flex items-center justify-center hover:bg-secondary-100"
-                      >
-                        <MinusIcon className="h-3 w-3" />
-                      </button>
-
-                      <span className="w-8 text-center font-medium">
-                        {item.quantity}
-                      </span>
-
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.product, item.quantity + 1)
-                        }
-                        className="w-6 h-6 bg-white border border-secondary-300 rounded flex items-center justify-center hover:bg-secondary-100"
-                      >
-                        <PlusIcon className="h-3 w-3" />
-                      </button>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="font-medium text-secondary-900">
-                        {formatCurrency(item.unitPrice * item.quantity)}
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-secondary-900 text-sm truncate">
+                            {item.productName}
+                          </h4>
+                          <p className="text-xs text-secondary-500 truncate">
+                            SKU: {item.sku}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removeFromCart(item.product)}
+                          className="text-red-500 hover:text-red-700 flex-shrink-0 ml-2"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
                       </div>
-                      <div className="text-xs text-secondary-500">
-                        {formatCurrency(item.unitPrice)} each
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.product, item.quantity - 1)
+                            }
+                            className="w-6 h-6 bg-white border border-secondary-300 rounded flex items-center justify-center hover:bg-secondary-100"
+                          >
+                            <MinusIcon className="h-3 w-3" />
+                          </button>
+
+                          <span className="w-8 text-center font-medium">
+                            {item.quantity}
+                          </span>
+
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.product, item.quantity + 1)
+                            }
+                            className="w-6 h-6 bg-white border border-secondary-300 rounded flex items-center justify-center hover:bg-secondary-100"
+                          >
+                            <PlusIcon className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        <div className="text-right flex-shrink-0">
+                          <div className="font-medium text-secondary-900">
+                            {formatCurrency(item.unitPrice * item.quantity)}
+                          </div>
+                          <div className="text-xs text-secondary-500">
+                            {formatCurrency(item.unitPrice)} each
+                          </div>
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fixed checkout section - always visible */}
+              <div className="flex-shrink-0 border-t border-secondary-200 p-4 bg-white">
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-lg font-bold pt-2">
+                    <span className="text-secondary-900">Total</span>
+                    <span className="text-primary-600">
+                      {formatCurrency(totals.subtotal)}
+                    </span>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="w-full btn-primary"
+                >
+                  Checkout ({cart.length} items)
+                </button>
+              </div>
+            </>
           )}
         </div>
-
-        {/* Cart Summary & Checkout */}
-        {cart.length > 0 && (
-          <div className="border-t border-secondary-200 p-4">
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-secondary-600">Subtotal</span>
-                <span className="text-secondary-900">
-                  {formatCurrency(totals.subtotal)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-secondary-600">Tax (16%)</span>
-                <span className="text-secondary-900">
-                  {formatCurrency(totals.tax)}
-                </span>
-              </div>
-              <div className="flex justify-between text-lg font-bold border-t border-secondary-200 pt-2">
-                <span className="text-secondary-900">Total</span>
-                <span className="text-primary-600">
-                  {formatCurrency(totals.total)}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowPaymentModal(true)}
-              className="w-full btn-primary"
-            >
-              Checkout ({cart.length} items)
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Payment Modal */}
@@ -479,17 +648,9 @@ const POS = () => {
             <div className="space-y-4">
               {/* Order Summary */}
               <div className="bg-secondary-50 rounded-lg p-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Subtotal</span>
-                  <span>{formatCurrency(totals.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Tax</span>
-                  <span>{formatCurrency(totals.tax)}</span>
-                </div>
-                <div className="flex justify-between font-bold border-t border-secondary-200 pt-2">
+                <div className="flex justify-between font-bold pt-2">
                   <span>Total</span>
-                  <span>{formatCurrency(totals.total)}</span>
+                  <span>{formatCurrency(totals.subtotal)}</span>
                 </div>
               </div>
 
@@ -525,21 +686,76 @@ const POS = () => {
                 </div>
               </div>
 
-              {/* Amount Paid */}
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">
-                  Amount Paid
-                </label>
-                <input
-                  type="number"
-                  value={amountPaid}
-                  onChange={(e) => setAmountPaid(e.target.value)}
-                  placeholder={formatCurrency(totals.total)}
-                  className="input-field"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
+              {/* Payment Method Specific Fields */}
+              {paymentMethod === "cash" ? (
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Amount Paid
+                  </label>
+                  <input
+                    type="number"
+                    value={amountPaid}
+                    onChange={(e) => setAmountPaid(e.target.value)}
+                    placeholder={formatCurrency(totals.subtotal)}
+                    className="input-field"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    M-Pesa Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={mpesaPhone}
+                    onChange={(e) => setMpesaPhone(e.target.value)}
+                    placeholder="e.g., 0712345678"
+                    className="input-field"
+                    pattern="07[0-9]{9}"
+                  />
+                  <p className="text-xs text-secondary-500 mt-1">
+                    Enter phone number in format: 0712345678
+                  </p>
+                </div>
+              )}
+
+              {/* Payment Status for M-Pesa */}
+              {paymentMethod === "mpesa" && mpesaPaymentStatus && (
+                <div
+                  className={`rounded-lg p-3 ${
+                    mpesaPaymentStatus === "pending"
+                      ? "bg-yellow-50 border border-yellow-200"
+                      : mpesaPaymentStatus === "success"
+                      ? "bg-green-50 border border-green-200"
+                      : "bg-red-50 border border-red-200"
+                  }`}
+                >
+                  <div className="flex items-center">
+                    {mpesaPaymentStatus === "pending" && (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+                        <span className="text-yellow-700">
+                          Payment request sent. Please check your phone and
+                          enter M-Pesa PIN.
+                        </span>
+                      </>
+                    )}
+                    {mpesaPaymentStatus === "success" && (
+                      <span className="text-green-700">
+                        ✅ Payment successful! Transaction ID:{" "}
+                        {mpesaTransactionId}
+                      </span>
+                    )}
+                    {mpesaPaymentStatus === "failed" && (
+                      <span className="text-red-700">
+                        ❌ Payment failed. Please try again.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Change */}
               {paymentMethod === "cash" && amountPaid && (
@@ -566,12 +782,20 @@ const POS = () => {
                   disabled={
                     processing ||
                     (paymentMethod === "cash" &&
-                      parseFloat(amountPaid) < totals.total)
+                      parseFloat(amountPaid) < totals.total) ||
+                    (paymentMethod === "mpesa" &&
+                      (!mpesaPhone || mpesaPhone.length < 10))
                   }
                   className="flex-1 btn-primary disabled:opacity-50"
                 >
                   {processing ? (
                     <LoadingSpinner size="small" />
+                  ) : paymentMethod === "mpesa" ? (
+                    mpesaPaymentStatus === "pending" ? (
+                      "Processing Payment..."
+                    ) : (
+                      "Send M-Pesa Request"
+                    )
                   ) : (
                     "Complete Sale"
                   )}

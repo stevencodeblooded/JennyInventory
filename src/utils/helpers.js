@@ -5,12 +5,13 @@ import { format, formatDistanceToNow, isToday, isYesterday } from "date-fns";
  * Format currency using KES format
  */
 export const formatCurrency = (amount, currency = "KES") => {
-  if (amount === null || amount === undefined) return "KSh 0.00";
+  if (amount === null || amount === undefined) return "KSh 0";
 
   return new Intl.NumberFormat("en-KE", {
     style: "currency",
-    currency: currency,
-    minimumFractionDigits: 2,
+    currency,
+    minimumFractionDigits: 0, // don’t force decimals
+    maximumFractionDigits: 2, // show up to 2 if present
   }).format(amount);
 };
 
@@ -112,10 +113,10 @@ export const sanitizeInput = (input) => {
   if (typeof input !== "string") return input;
 
   return input
-    .trim()
     .replace(/[<>]/g, "") // Remove potential HTML tags
     .replace(/\$/g, ""); // Remove $ to prevent MongoDB injection
 };
+
 
 /**
  * Format file size
@@ -265,32 +266,6 @@ export const getPaymentStatus = (status) => {
       text: "Unknown",
     }
   );
-};
-
-/**
- * Calculate tax amount
- */
-export const calculateTax = (amount, rate = 16, inclusive = false) => {
-  let taxAmount, netAmount, grossAmount;
-
-  if (inclusive) {
-    // Tax is included in the amount
-    netAmount = amount / (1 + rate / 100);
-    taxAmount = amount - netAmount;
-    grossAmount = amount;
-  } else {
-    // Tax is not included
-    netAmount = amount;
-    taxAmount = amount * (rate / 100);
-    grossAmount = amount + taxAmount;
-  }
-
-  return {
-    netAmount: Number(netAmount.toFixed(2)),
-    taxAmount: Number(taxAmount.toFixed(2)),
-    grossAmount: Number(grossAmount.toFixed(2)),
-    rate,
-  };
 };
 
 /**

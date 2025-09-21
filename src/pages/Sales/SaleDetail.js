@@ -161,7 +161,7 @@ const SaleDetail = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate('/sales')}
+            onClick={() => navigate("/sales")}
             className="text-secondary-400 hover:text-secondary-600"
           >
             <ArrowLeftIcon className="h-6 w-6" />
@@ -177,15 +177,12 @@ const SaleDetail = () => {
         </div>
 
         <div className="flex items-center space-x-3">
-          <button
-            onClick={printReceipt}
-            className="btn-secondary"
-          >
+          <button onClick={printReceipt} className="btn-secondary">
             <PrinterIcon className="h-5 w-5 mr-2" />
             Print Receipt
           </button>
-          
-          {hasPermission('sales', 'void') && sale.status === 'completed' && (
+
+          {hasPermission("sales", "void") && sale.status === "completed" && (
             <>
               <button
                 onClick={() => setShowRefundModal(true)}
@@ -194,7 +191,7 @@ const SaleDetail = () => {
                 <ArrowPathIcon className="h-5 w-5 mr-2" />
                 Refund
               </button>
-              
+
               <button
                 onClick={voidSale}
                 className="btn-outline border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
@@ -211,65 +208,65 @@ const SaleDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sale Summary */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-secondary-900 mb-4">Sale Summary</h3>
-          
-          <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-secondary-900 mb-4">
+            Sale Summary
+          </h3>
+
+          <div className="space-y-14">
             <div className="flex justify-between">
               <span className="text-secondary-600">Status</span>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                sale.status === 'completed' ? 'bg-green-100 text-green-800' :
-                sale.status === 'voided' ? 'bg-red-100 text-red-800' :
-                sale.status === 'refunded' ? 'bg-purple-100 text-purple-800' :
-                'bg-yellow-100 text-yellow-800'
-              }`}>
-                {sale.status === 'completed' ? 'Completed' :
-                 sale.status === 'voided' ? 'Voided' :
-                 sale.status === 'refunded' ? 'Refunded' :
-                 sale.status === 'partial_refund' ? 'Partial Refund' :
-                 sale.status}
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  sale.status === "completed"
+                    ? "bg-green-100 text-green-800"
+                    : sale.status === "voided"
+                    ? "bg-red-100 text-red-800"
+                    : sale.status === "refunded"
+                    ? "bg-purple-100 text-purple-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
+                {sale.status === "completed"
+                  ? "Completed"
+                  : sale.status === "voided"
+                  ? "Voided"
+                  : sale.status === "refunded"
+                  ? "Refunded"
+                  : sale.status === "partial_refund"
+                  ? "Partial Refund"
+                  : sale.status}
               </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-secondary-600">Subtotal</span>
-              <span className="font-medium">{formatCurrency(sale.totals.subtotal)}</span>
-            </div>
-
-            {sale.totals.discount > 0 && (
-              <div className="flex justify-between">
-                <span className="text-secondary-600">Discount</span>
-                <span className="font-medium text-green-600">
-                  -{formatCurrency(sale.totals.discount)}
-                </span>
-              </div>
-            )}
-
-            <div className="flex justify-between">
-              <span className="text-secondary-600">Tax (16%)</span>
-              <span className="font-medium">{formatCurrency(sale.totals.tax)}</span>
             </div>
 
             <div className="flex justify-between text-lg font-bold border-t border-secondary-200 pt-3">
               <span>Total</span>
-              <span className="text-primary-600">{formatCurrency(sale.totals.total)}</span>
+              <span className="text-primary-600">
+                {formatCurrency(sale.totals.subtotal)}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Customer Information */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-secondary-900 mb-4">Customer</h3>
-          
+          <h3 className="text-lg font-semibold text-secondary-900 mb-4">
+            Customer
+          </h3>
+
           {sale.customerInfo ? (
             <div className="space-y-3">
               <div className="flex items-center">
                 <UserIcon className="h-5 w-5 text-secondary-400 mr-3" />
                 <div>
-                  <p className="font-medium text-secondary-900">{sale.customerInfo.name}</p>
-                  <p className="text-sm text-secondary-500">{sale.customerInfo.phone}</p>
+                  <p className="font-medium text-secondary-900">
+                    {sale.customerInfo.name}
+                  </p>
+                  <p className="text-sm text-secondary-500">
+                    {sale.customerInfo.phone}
+                  </p>
                 </div>
               </div>
-              
+
               {sale.customerInfo.email && (
                 <div className="text-sm text-secondary-600">
                   Email: {sale.customerInfo.email}
@@ -295,157 +292,189 @@ const SaleDetail = () => {
 
         {/* Payment Information */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-secondary-900 mb-4">Payment</h3>
-          
+          <h3 className="text-lg font-semibold text-secondary-900 mb-4">
+            Payment
+          </h3>
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-secondary-600">Method</span>
               <div className="flex items-center">
                 <CreditCardIcon className="h-4 w-4 text-secondary-400 mr-2" />
                 <span className="font-medium capitalize">
-                  {sale.payment.method.replace('_', ' ')}
+                  {sale.payment.method.replace("_", " ")}
                 </span>
               </div>
             </div>
 
             <div className="flex justify-between">
               <span className="text-secondary-600">Status</span>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentStatus.bgColor} ${paymentStatus.color}`}>
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentStatus.bgColor} ${paymentStatus.color}`}
+              >
                 {paymentStatus.text}
               </span>
             </div>
 
             <div className="flex justify-between">
               <span className="text-secondary-600">Amount Paid</span>
-              <span className="font-medium">{formatCurrency(sale.payment.totalPaid)}</span>
+              <span className="font-medium">
+                {formatCurrency(sale.payment.totalPaid)}
+              </span>
             </div>
 
             {sale.payment.change > 0 && (
               <div className="flex justify-between">
                 <span className="text-secondary-600">Change Given</span>
-                <span className="font-medium">{formatCurrency(sale.payment.change)}</span>
+                <span className="font-medium">
+                  {formatCurrency(sale.payment.change)}
+                </span>
               </div>
             )}
 
             {sale.payment.details && sale.payment.details.length > 0 && (
               <div className="mt-4">
-                <h4 className="text-sm font-semibold text-secondary-900 mb-2">  Payment Details</h4>
+                <h4 className="text-sm font-semibold text-secondary-900 mb-2">
+                  {" "}
+                  Payment Details
+                </h4>
                 <ul className="list-disc list-inside space-y-1">
-                    {sale.payment.details.map((detail, index) => (
-                        <li key={index} className="text-secondary-600">
-                        {detail}
-                        </li>
-                    ))}
+                  {sale.payment.details.map((detail, index) => (
+                    <li key={index} className="text-secondary-600">
+                      {typeof detail === "string"
+                        ? detail
+                        : detail.method && detail.amount
+                        ? `${detail.method}: ${formatCurrency(detail.amount)}`
+                        : JSON.stringify(detail)}
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
           </div>
         </div>
       </div>
-        {/* Items Table */}
-        <div className="card">
-            <h3 className="text-lg font-semibold text-secondary-900 mb-4">Items Sold</h3>
-            
-            <table className="min-w-full divide-y divide-secondary-200">
-                <thead>
-                <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Product
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Quantity
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Unit Price
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Total
-                    </th>
-                </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-secondary-200">
-                {sale.items.map(item => (
-                    <tr key={item._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                        {item.product.image && (
-                            <img src={item.product.image} alt={item.product.name} className="h-8 w-8 rounded" />
-                        )}
-                        <span className="text-sm font-medium text-secondary-900">{item.product.name}</span>
-                        </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {item.quantity}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {formatCurrency(item.unitPrice)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {formatCurrency(item.total)}
-                    </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        </div>
-        {/* Refund Modal */}
-        {showRefundModal && (
-            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-                <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-                    <h3 className="text-lg font-semibold text-secondary-900 mb-4">Process Refund</h3>
-                    <p className="text-sm text-secondary-600 mb-4">
-                        Select items to refund and provide a reason.
-                    </p>
-                    <div className="space-y-4">
-                        {refundItems.map(item => (
-                            <div key={item.productId} className="flex items-center justify-between">
-                                <span>{item.productName}</span>
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max={item.maxQuantity}
-                                        value={item.quantity}
-                                        onChange={(e) => updateRefundQuantity(item.productId, parseInt(e.target.value))}
-                                        className="w-16 border border-secondary-300 rounded px-2 py-1"
-                                    />
-                                    <span className="text-secondary-600">
-                                        {formatCurrency(item.unitPrice * item.quantity)}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                        <textarea
-                            value={refundReason}
-                            onChange={(e) => setRefundReason(e.target.value)}
-                            placeholder="Reason for refund"
-                            className="w-full border border-secondary-300 rounded px-3 py-2"
-                        />
-                        <div className="flex justify-between items-center mt-4">
-                            <span className="font-medium text-secondary-900">Total Refund Amount:</span>
-                            <span className="text-primary-600 font-bold">
-                                {formatCurrency(totalRefundAmount)}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="mt-6 flex justify-end space-x-3">
-                        <button
-                            onClick={() => setShowRefundModal(false)}
-                            className="btn-outline text-secondary-600 hover:bg-secondary-100"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleRefund}
-                            className="btn-primary"
-                        >
-                            Process Refund
-                        </button>
-                    </div>
+      {/* Items Table */}
+      <div className="card">
+        <h3 className="text-lg font-semibold text-secondary-900 mb-4">
+          Items Sold
+        </h3>
+
+        <table className="min-w-full divide-y divide-secondary-200">
+          <thead>
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                Product
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                Quantity
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                Unit Price
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-secondary-200">
+            {sale.items.map((item) => (
+              <tr key={item._id}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-2">
+                    {item.product.image && (
+                      <img
+                        src={item.product.image}
+                        alt={item.product.name}
+                        className="h-8 w-8 rounded"
+                      />
+                    )}
+                    <span className="text-sm font-medium text-secondary-900">
+                      {item.product.name}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right">
+                  {item.quantity}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right">
+                  {formatCurrency(item.unitPrice)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right">
+                  {formatCurrency(item.subtotal)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {/* Refund Modal */}
+      {showRefundModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-secondary-900 mb-4">
+              Process Refund
+            </h3>
+            <p className="text-sm text-secondary-600 mb-4">
+              Select items to refund and provide a reason.
+            </p>
+            <div className="space-y-4">
+              {refundItems.map((item) => (
+                <div
+                  key={item.productId}
+                  className="flex items-center justify-between"
+                >
+                  <span>{item.productName}</span>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max={item.maxQuantity}
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateRefundQuantity(
+                          item.productId,
+                          parseInt(e.target.value)
+                        )
+                      }
+                      className="w-16 border border-secondary-300 rounded px-2 py-1"
+                    />
+                    <span className="text-secondary-600">
+                      {formatCurrency(item.unitPrice * item.quantity)}
+                    </span>
+                  </div>
                 </div>
+              ))}
+              <textarea
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="Reason for refund"
+                className="w-full border border-secondary-300 rounded px-3 py-2"
+              />
+              <div className="flex justify-between items-center mt-4">
+                <span className="font-medium text-secondary-900">
+                  Total Refund Amount:
+                </span>
+                <span className="text-primary-600 font-bold">
+                  {formatCurrency(totalRefundAmount)}
+                </span>
+              </div>
             </div>
-        )}
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowRefundModal(false)}
+                className="btn-outline text-secondary-600 hover:bg-secondary-100"
+              >
+                Cancel
+              </button>
+              <button onClick={handleRefund} className="btn-primary">
+                Process Refund
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-    );
+  );
 }
 export default SaleDetail;

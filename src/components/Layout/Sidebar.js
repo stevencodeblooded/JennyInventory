@@ -1,5 +1,4 @@
 // src/components/Layout/Sidebar.js
-import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import {
@@ -43,24 +42,18 @@ const Sidebar = ({ open, setOpen }) => {
       icon: ClipboardDocumentListIcon,
       show: hasPermission("sales", "read"),
     },
-    {
-      name: "Orders",
-      href: "/orders",
-      icon: ClipboardDocumentListIcon,
-      show: hasPermission("orders", "read"),
-    },
-    {
-      name: "Customers",
-      href: "/customers",
-      icon: UserGroupIcon,
-      show: hasPermission("orders", "read"),
-    },
-    {
-      name: "Reports",
-      href: "/reports",
-      icon: ChartBarIcon,
-      show: hasPermission("reports", "view"),
-    },
+    // {
+    //   name: "Orders",
+    //   href: "/orders",
+    //   icon: ClipboardDocumentListIcon,
+    //   show: hasPermission("orders", "read"),
+    // },
+    // {
+    //   name: "Customers",
+    //   href: "/customers",
+    //   icon: UserGroupIcon,
+    //   show: hasPermission("orders", "read"),
+    // },
     {
       name: "Users",
       href: "/users",

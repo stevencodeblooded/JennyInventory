@@ -127,6 +127,9 @@ export const salesAPI = {
     api.get(`/sales/by-product/${productId}`, { params }),
   getPendingPayments: () => api.get("/sales/pending-payments"),
   recordPayment: (id, data) => api.post(`/sales/${id}/payment`, data),
+  initiateMpesaPayment: (data) => api.post("/sales/mpesa/initiate", data),
+  checkMpesaPaymentStatus: (checkoutRequestId) =>
+    api.get(`/sales/mpesa/status/${checkoutRequestId}`),
 };
 
 // Orders API

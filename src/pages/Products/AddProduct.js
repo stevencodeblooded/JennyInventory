@@ -25,11 +25,10 @@ const AddProduct = () => {
     brand: "",
     unit: "piece",
     pricing: {
-      cost: "",
+      // cost: "",
       sellingPrice: "",
       wholesalePrice: "",
       discount: 0,
-      tax: 16,
     },
     inventory: {
       currentStock: 0,
@@ -120,12 +119,6 @@ const AddProduct = () => {
       newErrors.category = "Category is required";
     }
 
-    if (!formData.pricing.cost) {
-      newErrors["pricing.cost"] = "Cost price is required";
-    } else if (formData.pricing.cost < 0) {
-      newErrors["pricing.cost"] = "Cost price cannot be negative";
-    }
-
     if (!formData.pricing.sellingPrice) {
       newErrors["pricing.sellingPrice"] = "Selling price is required";
     } else if (formData.pricing.sellingPrice < 0) {
@@ -142,21 +135,6 @@ const AddProduct = () => {
 
     if (formData.pricing.discount < 0 || formData.pricing.discount > 100) {
       newErrors["pricing.discount"] = "Discount must be between 0 and 100";
-    }
-
-    if (formData.pricing.tax < 0 || formData.pricing.tax > 100) {
-      newErrors["pricing.tax"] = "Tax rate must be between 0 and 100";
-    }
-
-    // Validate selling price is higher than cost
-    if (formData.pricing.cost && formData.pricing.sellingPrice) {
-      if (
-        parseFloat(formData.pricing.sellingPrice) <
-        parseFloat(formData.pricing.cost)
-      ) {
-        newErrors["pricing.sellingPrice"] =
-          "Selling price should be higher than cost price";
-      }
     }
 
     setErrors(newErrors);
@@ -196,13 +174,12 @@ const AddProduct = () => {
         ...formData,
         pricing: {
           ...formData.pricing,
-          cost: parseFloat(formData.pricing.cost),
+          // cost: parseFloat(formData.pricing.cost),
           sellingPrice: parseFloat(formData.pricing.sellingPrice),
           wholesalePrice: formData.pricing.wholesalePrice
             ? parseFloat(formData.pricing.wholesalePrice)
             : undefined,
           discount: parseFloat(formData.pricing.discount) || 0,
-          tax: parseFloat(formData.pricing.tax) || 16,
         },
         inventory: {
           ...formData.inventory,
@@ -318,20 +295,6 @@ const AddProduct = () => {
 
             <div>
               <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Barcode
-              </label>
-              <input
-                type="text"
-                name="barcode"
-                value={formData.barcode}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="Product barcode"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
                 Category *
               </label>
               <select
@@ -352,34 +315,6 @@ const AddProduct = () => {
               {errors.category && (
                 <p className="mt-1 text-sm text-red-600">{errors.category}</p>
               )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Subcategory
-              </label>
-              <input
-                type="text"
-                name="subcategory"
-                value={formData.subcategory}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="Product subcategory"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Brand
-              </label>
-              <input
-                type="text"
-                name="brand"
-                value={formData.brand}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="Product brand"
-              />
             </div>
 
             <div>
@@ -428,30 +363,7 @@ const AddProduct = () => {
             Pricing
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Cost Price (KSh) *
-              </label>
-              <input
-                type="number"
-                name="pricing.cost"
-                value={formData.pricing.cost}
-                onChange={handleChange}
-                className={`input-field ${
-                  errors["pricing.cost"] ? "border-red-300" : ""
-                }`}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-              />
-              {errors["pricing.cost"] && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors["pricing.cost"]}
-                </p>
-              )}
-            </div>
-
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-secondary-700 mb-1">
                 Selling Price (KSh) *
@@ -474,58 +386,9 @@ const AddProduct = () => {
                 </p>
               )}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Wholesale Price (KSh)
-              </label>
-              <input
-                type="number"
-                name="pricing.wholesalePrice"
-                value={formData.pricing.wholesalePrice}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Discount (%)
-              </label>
-              <input
-                type="number"
-                name="pricing.discount"
-                value={formData.pricing.discount}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="0"
-                min="0"
-                max="100"
-              />
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Tax Rate (%)
-              </label>
-              <input
-                type="number"
-                name="pricing.tax"
-                value={formData.pricing.tax}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="16"
-                min="0"
-                max="100"
-                step="0.01"
-              />
-            </div>
-
             {/* Profit Margin Display */}
             {formData.pricing.cost && formData.pricing.sellingPrice && (
               <div>
@@ -592,7 +455,7 @@ const AddProduct = () => {
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-secondary-700 mb-1">
                 Reorder Point
               </label>
@@ -620,7 +483,7 @@ const AddProduct = () => {
                 placeholder="100"
                 min="0"
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="flex flex-wrap gap-4 mt-4">

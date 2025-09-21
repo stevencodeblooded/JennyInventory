@@ -27,7 +27,6 @@ const EditProduct = () => {
       sellingPrice: "",
       wholesalePrice: "",
       discount: 0,
-      tax: 16,
     },
     inventory: {
       minStock: 10,
@@ -84,7 +83,6 @@ const EditProduct = () => {
           sellingPrice: product.pricing.sellingPrice || "",
           wholesalePrice: product.pricing.wholesalePrice || "",
           discount: product.pricing.discount || 0,
-          tax: product.pricing.tax || 16,
         },
         inventory: {
           minStock: product.inventory.minStock || 10,
@@ -177,10 +175,6 @@ const EditProduct = () => {
       newErrors["pricing.discount"] = "Discount must be between 0 and 100";
     }
 
-    if (formData.pricing.tax < 0 || formData.pricing.tax > 100) {
-      newErrors["pricing.tax"] = "Tax rate must be between 0 and 100";
-    }
-
     // Validate selling price is higher than cost
     if (formData.pricing.cost && formData.pricing.sellingPrice) {
       if (
@@ -235,7 +229,6 @@ const EditProduct = () => {
             ? parseFloat(formData.pricing.wholesalePrice)
             : undefined,
           discount: parseFloat(formData.pricing.discount) || 0,
-          tax: parseFloat(formData.pricing.tax) || 16,
         },
         inventory: {
           ...formData.inventory,
@@ -347,20 +340,6 @@ const EditProduct = () => {
 
             <div>
               <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Barcode
-              </label>
-              <input
-                type="text"
-                name="barcode"
-                value={formData.barcode}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="Product barcode"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
                 Category *
               </label>
               <select
@@ -381,34 +360,6 @@ const EditProduct = () => {
               {errors.category && (
                 <p className="mt-1 text-sm text-red-600">{errors.category}</p>
               )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Subcategory
-              </label>
-              <input
-                type="text"
-                name="subcategory"
-                value={formData.subcategory}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="Product subcategory"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Brand
-              </label>
-              <input
-                type="text"
-                name="brand"
-                value={formData.brand}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="Product brand"
-              />
             </div>
 
             <div>
@@ -457,30 +408,7 @@ const EditProduct = () => {
             Pricing
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Cost Price (KSh) *
-              </label>
-              <input
-                type="number"
-                name="pricing.cost"
-                value={formData.pricing.cost}
-                onChange={handleChange}
-                className={`input-field ${
-                  errors["pricing.cost"] ? "border-red-300" : ""
-                }`}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-              />
-              {errors["pricing.cost"] && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors["pricing.cost"]}
-                </p>
-              )}
-            </div>
-
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-secondary-700 mb-1">
                 Selling Price (KSh) *
@@ -503,58 +431,9 @@ const EditProduct = () => {
                 </p>
               )}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Wholesale Price (KSh)
-              </label>
-              <input
-                type="number"
-                name="pricing.wholesalePrice"
-                value={formData.pricing.wholesalePrice}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Discount (%)
-              </label>
-              <input
-                type="number"
-                name="pricing.discount"
-                value={formData.pricing.discount}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="0"
-                min="0"
-                max="100"
-              />
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Tax Rate (%)
-              </label>
-              <input
-                type="number"
-                name="pricing.tax"
-                value={formData.pricing.tax}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="16"
-                min="0"
-                max="100"
-                step="0.01"
-              />
-            </div>
-
             {/* Profit Margin Display */}
             {formData.pricing.cost && formData.pricing.sellingPrice && (
               <div>
@@ -579,7 +458,7 @@ const EditProduct = () => {
             feature on the product detail page.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-secondary-700 mb-1">
                 Minimum Stock Level
@@ -610,7 +489,7 @@ const EditProduct = () => {
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-secondary-700 mb-1">
                 Reorder Point
               </label>
@@ -638,7 +517,7 @@ const EditProduct = () => {
                 placeholder="100"
                 min="0"
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="flex flex-wrap gap-4 mt-4">

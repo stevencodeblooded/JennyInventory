@@ -374,11 +374,6 @@ const OrderDetail = () => {
               </div>
             )}
 
-            <div className="flex justify-between">
-              <span className="text-secondary-600">Tax</span>
-              <span className="font-medium">{formatCurrency(order.totals.tax)}</span>
-            </div>
-
             <div className="flex justify-between text-lg font-bold border-t border-secondary-200 pt-3">
               <span>Total</span>
               <span className="text-primary-600">{formatCurrency(order.totals.total)}</span>

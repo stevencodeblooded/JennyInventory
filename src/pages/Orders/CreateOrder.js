@@ -4,8 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { ordersAPI, customersAPI, productsAPI } from "../../services/api";
 import {
   formatCurrency,
-  calculateTax,
-  sanitizeInput,
 } from "../../utils/helpers";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
@@ -173,12 +171,9 @@ const CreateOrder = () => {
       (sum, item) => sum + item.unitPrice * item.quantity,
       0
     );
-    const tax = calculateTax(subtotal, 16, false);
 
     return {
-      subtotal,
-      tax: tax.taxAmount,
-      total: tax.grossAmount,
+      total: subtotal,
     };
   };
 
@@ -534,13 +529,6 @@ const CreateOrder = () => {
                   <span className="text-secondary-600">Subtotal</span>
                   <span className="font-medium">
                     {formatCurrency(totals.subtotal)}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-secondary-600">Tax (16%)</span>
-                  <span className="font-medium">
-                    {formatCurrency(totals.tax)}
                   </span>
                 </div>
 

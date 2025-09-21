@@ -321,13 +321,6 @@ const ProductDetail = () => {
                 </span>
               </div>
             )}
-
-            <div className="flex justify-between items-center">
-              <span className="text-secondary-600">Tax Rate</span>
-              <span className="font-medium text-secondary-900">
-                {product.pricing.tax}%
-              </span>
-            </div>
           </div>
         </div>
 
