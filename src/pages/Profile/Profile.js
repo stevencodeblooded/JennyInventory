@@ -1,5 +1,5 @@
 // src/pages/Profile/Profile.js
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { formatDate, getInitials, isValidEmail } from "../../utils/helpers";
 import LoadingSpinner from "../../components/common/LoadingSpinner";

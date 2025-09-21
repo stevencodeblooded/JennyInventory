@@ -6,8 +6,6 @@ import {
   ShoppingCartIcon,
   CubeIcon,
   ClipboardDocumentListIcon,
-  UserGroupIcon,
-  ChartBarIcon,
   UsersIcon,
   CogIcon,
   XMarkIcon,

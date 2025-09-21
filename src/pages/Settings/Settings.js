@@ -1,5 +1,5 @@
 // src/pages/Settings/Settings.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { settingsAPI } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";

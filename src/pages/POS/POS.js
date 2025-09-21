@@ -1,7 +1,7 @@
 // src/pages/POS/POS.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { productsAPI, salesAPI, customersAPI } from "../../services/api";
+import { productsAPI, salesAPI } from "../../services/api";
 import { formatCurrency } from "../../utils/helpers";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
@@ -10,7 +10,6 @@ import {
   PlusIcon,
   MinusIcon,
   TrashIcon,
-  PrinterIcon,
   UserIcon,
   CreditCardIcon,
   BanknotesIcon,

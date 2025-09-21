@@ -1,6 +1,5 @@
 // src/pages/auth/Login.js
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import {
@@ -182,35 +181,16 @@ const Login = () => {
                 )}
               </button>
             </div>
-
-            {/* Alternative Login */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-secondary-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-secondary-500">Or</span>
-              </div>
-            </div>
-
-            <div>
-              <Link
-                to="/pin-login"
-                className="w-full flex justify-center py-2 px-4 border border-secondary-300 rounded-lg text-sm font-medium text-secondary-700 bg-white hover:bg-secondary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
-              >
-                Quick PIN Login
-              </Link>
-            </div>
           </form>
         </div>
 
         {/* Demo Credentials (Development Only) */}
         {process.env.NODE_ENV === "development" && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-yellow-800 mb-2">
-              Demo Credentials
+            <h3 className="text-sm font-medium text-center text-yellow-800 mb-2">
+              Credentials
             </h3>
-            <div className="text-xs text-yellow-700 space-y-1">
+            <div className="text-xs text-center text-yellow-700 space-y-1">
               <p>
                 <strong>Owner:</strong> admin@jennysaleflow.com / Admin@123
               </p>
@@ -221,7 +201,7 @@ const Login = () => {
         {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-secondary-500">
-            © 2024 JennySaleFlow. Built for efficient inventory management.
+            © {new Date().getFullYear()} JennySaleFlow. Built for efficient inventory management.
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 // src/pages/Products/EditProduct.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { productsAPI, categoriesAPI } from "../../services/api";
 import { sanitizeInput } from "../../utils/helpers";

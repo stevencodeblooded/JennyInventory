@@ -1,5 +1,5 @@
 // src/pages/Sales/SaleDetail.js
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { salesAPI } from '../../services/api';
@@ -13,8 +13,6 @@ import {
   ArrowPathIcon,
   UserIcon,
   CreditCardIcon,
-  ReceiptRefundIcon,
-  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 
 const SaleDetail = () => {

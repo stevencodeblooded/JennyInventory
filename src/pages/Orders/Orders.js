@@ -1,5 +1,5 @@
 // src/pages/Orders/Orders.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { ordersAPI, usersAPI } from "../../services/api";

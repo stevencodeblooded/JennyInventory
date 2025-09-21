@@ -11,7 +11,6 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 // Import components
 import Layout from "./components/Layout/Layout";
 import Login from "./pages/auth/Login";
-import PinLogin from "./pages/auth/PinLogin";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Products from "./pages/Products/Products";
 import ProductDetail from "./pages/Products/ProductDetail";
@@ -85,14 +84,6 @@ function AppRoutes() {
         element={
           <PublicRoute>
             <Login />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/pin-login"
-        element={
-          <PublicRoute>
-            <PinLogin />
           </PublicRoute>
         }
       />

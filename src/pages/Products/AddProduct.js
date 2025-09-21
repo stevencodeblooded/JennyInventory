@@ -1,5 +1,5 @@
 // src/pages/Products/AddProduct.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { productsAPI, categoriesAPI } from "../../services/api";
 import { sanitizeInput } from "../../utils/helpers";
@@ -7,7 +7,6 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
 import {
   ArrowLeftIcon,
-  PhotoIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 

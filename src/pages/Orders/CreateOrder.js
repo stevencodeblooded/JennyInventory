@@ -1,5 +1,5 @@
 // src/pages/Orders/CreateOrder.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ordersAPI, customersAPI, productsAPI } from "../../services/api";
 import {
