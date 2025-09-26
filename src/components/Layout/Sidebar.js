@@ -99,7 +99,10 @@ const Sidebar = ({ open, setOpen }) => {
             </button>
           </div>
 
-          <SidebarContent navigation={filteredNavigation} />
+          <SidebarContent
+            navigation={filteredNavigation}
+            setOpen={setOpen}
+          />
         </div>
 
         <div className="flex-shrink-0 w-14" />
@@ -117,7 +120,7 @@ const Sidebar = ({ open, setOpen }) => {
   );
 };
 
-const SidebarContent = ({ navigation }) => {
+const SidebarContent = ({ navigation, setOpen }) => {
   const location = useLocation();
 
   return (
@@ -148,6 +151,7 @@ const SidebarContent = ({ navigation }) => {
               <NavLink
                 key={item.name}
                 to={item.href}
+                onClick={() => setOpen && setOpen(false)}
                 className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
                   isActive
                     ? "bg-primary-100 text-primary-900 border-r-2 border-primary-600"

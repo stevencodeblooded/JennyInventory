@@ -1,4 +1,4 @@
-// src/pages/POS/POS.js
+// Improved POS.js with fixed M-Pesa payment flow
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { productsAPI, salesAPI } from "../../services/api";
@@ -10,8 +10,8 @@ import {
   PlusIcon,
   MinusIcon,
   TrashIcon,
-  UserIcon,
   CreditCardIcon,
+  ShoppingCartIcon,
   BanknotesIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -22,15 +22,18 @@ const POS = () => {
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [amountPaid, setAmountPaid] = useState("");
   const [processing, setProcessing] = useState(false);
   const [mpesaPhone, setMpesaPhone] = useState("");
-  const [mpesaPaymentStatus, setMpesaPaymentStatus] = useState(null); // 'pending', 'success', 'failed'
+  const [mpesaPaymentStatus, setMpesaPaymentStatus] = useState(null);
   const [mpesaTransactionId, setMpesaTransactionId] = useState("");
+
+  // Add debugging state
+  const [statusCheckCount, setStatusCheckCount] = useState(0);
+  const [lastStatusCheck, setLastStatusCheck] = useState(null);
 
   useEffect(() => {
     fetchProducts();
@@ -155,6 +158,8 @@ const POS = () => {
     setMpesaPhone("");
     setMpesaPaymentStatus(null);
     setMpesaTransactionId("");
+    setStatusCheckCount(0);
+    setLastStatusCheck(null);
   };
 
   const calculateTotals = () => {
@@ -165,7 +170,7 @@ const POS = () => {
 
     return {
       subtotal,
-      total: subtotal, // ADD THIS - since you removed tax, total = subtotal
+      total: subtotal,
     };
   };
 
@@ -197,21 +202,17 @@ const POS = () => {
       let paymentData;
 
       if (paymentMethod === "mpesa") {
-        // Show loading toast and store the toast ID
         const loadingToast = toast.loading("Initiating M-Pesa payment...");
 
         try {
           const mpesaResult = await initiateMpesaPayment(totals);
-
-          // Dismiss the loading toast
           toast.dismiss(loadingToast);
 
           if (!mpesaResult.success) {
-            toast.error("M-Pesa payment failed");
+            toast.error("M-Pesa payment failed to initiate");
             return;
           }
 
-          // Show success message
           toast.success("M-Pesa payment completed!");
 
           paymentData = {
@@ -228,9 +229,9 @@ const POS = () => {
             ],
           };
         } catch (error) {
-          // Dismiss loading toast and show error
           toast.dismiss(loadingToast);
-          toast.error("M-Pesa payment failed");
+          console.error("M-Pesa payment error:", error);
+          toast.error(error.message || "M-Pesa payment failed");
           return;
         }
       } else {
@@ -250,10 +251,10 @@ const POS = () => {
         };
       }
 
+      // Create sale data
       const saleData = {
         items: cart.map((item) => {
           const itemSubtotal = item.unitPrice * item.quantity;
-
           return {
             product: item.product,
             productName: item.productName,
@@ -267,9 +268,9 @@ const POS = () => {
           };
         }),
         totals: {
-          subtotal: 0, // Pre-save hook will calculate this
+          subtotal: 0,
           discount: 0,
-          total: 0, // Pre-save hook will calculate this
+          total: 0,
         },
         customer: selectedCustomer?._id,
         customerInfo: selectedCustomer
@@ -282,20 +283,18 @@ const POS = () => {
         payment: paymentData,
       };
 
+      console.log("Creating sale with data:", saleData);
+
       const response = await salesAPI.createSale(saleData);
       const sale = response.data.data;
 
       toast.success("Sale completed successfully!");
 
-      // UPDATE LOCAL STOCK COUNTS - ADD THIS LINE:
+      // Update local stock counts
       updateLocalProductStock(cart);
 
       // Clear cart and reset form
       clearCart();
-      setAmountPaid("");
-      setMpesaPhone("");
-      setMpesaPaymentStatus(null);
-      setMpesaTransactionId("");
       setPaymentMethod("cash");
       setShowPaymentModal(false);
 
@@ -305,7 +304,11 @@ const POS = () => {
       }
     } catch (error) {
       console.error("Failed to process sale:", error);
-      toast.error(error.response?.data?.message || "Failed to process sale");
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to process sale";
+      toast.error(errorMessage);
     } finally {
       setProcessing(false);
     }
@@ -324,50 +327,81 @@ const POS = () => {
   const initiateMpesaPayment = async (totals) => {
     try {
       setMpesaPaymentStatus("pending");
+      setStatusCheckCount(0);
+
+      console.log("Initiating M-Pesa payment with:", {
+        phone: mpesaPhone,
+        amount: totals.total,
+      });
 
       const response = await salesAPI.initiateMpesaPayment({
         phone: mpesaPhone,
         amount: totals.total,
       });
 
-      console.log("CheckoutRequestId:", response.data?.data?.checkoutRequestId);
+      console.log("M-Pesa initiation response:", response.data);
 
       const checkoutRequestId = response.data?.data?.checkoutRequestId;
 
       if (!checkoutRequestId) {
-        console.error("No checkoutRequestId found in response");
+        console.error("No checkoutRequestId in response");
         setMpesaPaymentStatus("failed");
         throw new Error("Invalid response from M-Pesa service");
       }
 
       // Return a promise that resolves when payment is complete
       return new Promise((resolve) => {
+        let pollCount = 0;
+        const maxPolls = 20; // Poll for up to 60 seconds (20 polls * 3 seconds)
+
         const pollPaymentStatus = async () => {
           try {
-            console.log("Polling status for:", checkoutRequestId); // Add this debug log
+            pollCount++;
+            setStatusCheckCount(pollCount);
+            setLastStatusCheck(new Date().toLocaleTimeString());
+
+            console.log(`Polling status (attempt ${pollCount})...`);
 
             const statusResponse = await salesAPI.checkMpesaPaymentStatus(
               checkoutRequestId
             );
-            console.log("Status response:", statusResponse.data); // Add this debug log
+            console.log("Status response:", statusResponse.data);
 
-            const { status, transactionId } = statusResponse.data.data;
+            const { status, transactionId, resultDesc } =
+              statusResponse.data.data;
 
             if (status === "success") {
               setMpesaPaymentStatus("success");
               setMpesaTransactionId(transactionId);
               resolve({ success: true, transactionId });
-            } else if (status === "failed") {
+            } else if (status === "failed" || status === "cancelled") {
               setMpesaPaymentStatus("failed");
-              resolve({ success: false });
+              resolve({
+                success: false,
+                error: resultDesc || "Payment failed or was cancelled",
+              });
+            } else if (pollCount >= maxPolls) {
+              // Timeout after maxPolls attempts
+              setMpesaPaymentStatus("failed");
+              resolve({
+                success: false,
+                error:
+                  "Payment verification timeout. Please check your M-Pesa messages.",
+              });
             } else {
               // Still pending, poll again
               setTimeout(pollPaymentStatus, 3000);
             }
           } catch (error) {
             console.error("Status polling error:", error);
-            setMpesaPaymentStatus("failed");
-            resolve({ success: false });
+
+            if (pollCount >= maxPolls) {
+              setMpesaPaymentStatus("failed");
+              resolve({ success: false, error: "Payment verification failed" });
+            } else {
+              // Retry on error
+              setTimeout(pollPaymentStatus, 3000);
+            }
           }
         };
 
@@ -377,15 +411,17 @@ const POS = () => {
     } catch (error) {
       console.error("M-Pesa initiation error:", error);
       setMpesaPaymentStatus("failed");
-      throw error;
+      throw new Error(
+        error.response?.data?.message || "Failed to initiate M-Pesa payment"
+      );
     }
   };
 
   const totals = calculateTotals();
   const change =
-      paymentMethod === "cash"
-        ? (parseFloat(amountPaid) || 0) - totals.subtotal
-        : 0;
+    paymentMethod === "cash"
+      ? (parseFloat(amountPaid) || 0) - totals.subtotal
+      : 0;
 
   return (
     <div className="h-full flex">
@@ -393,12 +429,13 @@ const POS = () => {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="bg-white border-b border-secondary-200 p-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-secondary-900">
               Point of Sale
             </h1>
             <div className="text-sm text-secondary-600">
-              Cashier: {user?.name}
+              Cashier:{" "}
+              <span className="text-red-600 font-semibold">{user?.name}</span>
             </div>
           </div>
 
@@ -422,14 +459,13 @@ const POS = () => {
               <LoadingSpinner />
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {products.map((product) => (
                 <div
                   key={product._id}
                   onClick={() => addToCart(product)}
                   className="bg-white border border-secondary-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer flex flex-col"
                 >
-                  {/* Product Image */}
                   <div className="aspect-square bg-secondary-100 rounded-lg mb-3 flex items-center justify-center">
                     {product.images?.[0]?.url ? (
                       <img
@@ -445,19 +481,13 @@ const POS = () => {
                     )}
                   </div>
 
-                  {/* Product Info */}
                   <div className="flex flex-col flex-1">
-                    {/* Product Name */}
                     <h3 className="font-medium text-secondary-900 mb-1 line-clamp-1">
                       {product.name}
                     </h3>
-
-                    {/* SKU (truncate to prevent wrapping) */}
                     <p className="text-sm text-secondary-600 mb-2 truncate">
                       SKU: {product.sku}
                     </p>
-
-                    {/* Price & Stock - SOLUTION 1: Stacked vertically */}
                     <div className="mt-auto space-y-1">
                       <div className="text-lg font-bold text-primary-600">
                         {formatCurrency(product.pricing.sellingPrice)}
@@ -490,7 +520,6 @@ const POS = () => {
         className="w-96 bg-white border-l border-secondary-200 flex flex-col"
         style={{ height: "60vh" }}
       >
-        {/* Cart Header */}
         <div className="p-4 border-b border-secondary-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-secondary-900">Cart</h2>
@@ -509,23 +538,16 @@ const POS = () => {
             )}
           </div>
 
-          {/* Customer Selection */}
-          <button
-            onClick={() => setShowCustomerModal(true)}
-            className="w-full mt-3 p-2 border border-secondary-300 rounded-lg text-left hover:bg-secondary-50 transition-colors duration-200"
-          >
-            <div className="flex items-center">
-              <UserIcon className="h-5 w-5 text-secondary-400 mr-2" />
+          <button className="w-full mt-3 p-2 border border-secondary-300 rounded-lg text-left hover:bg-secondary-50 transition-colors duration-200">
+            <div className="flex justify-center items-center">
+              <ShoppingCartIcon className="h-5 w-5 text-secondary-400 mr-2" />
               <span className="text-sm text-secondary-600">
-                {selectedCustomer
-                  ? selectedCustomer.name
-                  : "Select Customer (Optional)"}
+                <p>Shop worry-free</p>
               </span>
             </div>
           </button>
         </div>
 
-        {/* Cart Items */}
         <div className="flex-1 flex flex-col min-h-10">
           {cart.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-4">
@@ -541,7 +563,6 @@ const POS = () => {
             </div>
           ) : (
             <>
-              {/* Scrollable cart items */}
               <div className="flex-1 overflow-y-auto p-4 pb-0">
                 <div className="space-y-3 pb-4">
                   {cart.map((item) => (
@@ -605,7 +626,6 @@ const POS = () => {
                 </div>
               </div>
 
-              {/* Fixed checkout section - always visible */}
               <div className="flex-shrink-0 border-t border-secondary-200 p-4 bg-white">
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-lg font-bold pt-2">
@@ -631,7 +651,7 @@ const POS = () => {
       {/* Payment Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-secondary-900">
                 Payment
@@ -731,14 +751,22 @@ const POS = () => {
                       : "bg-red-50 border border-red-200"
                   }`}
                 >
-                  <div className="flex items-center">
+                  <div className="space-y-2">
                     {mpesaPaymentStatus === "pending" && (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
-                        <span className="text-yellow-700">
-                          Payment request sent. Please check your phone and
-                          enter M-Pesa PIN.
-                        </span>
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+                          <span className="text-yellow-700">
+                            Payment request sent. Please check your phone and
+                            enter M-Pesa PIN.
+                          </span>
+                        </div>
+                        {statusCheckCount > 0 && (
+                          <div className="text-xs text-yellow-600">
+                            Status checks: {statusCheckCount} | Last check:{" "}
+                            {lastStatusCheck}
+                          </div>
+                        )}
                       </>
                     )}
                     {mpesaPaymentStatus === "success" && (
@@ -749,7 +777,8 @@ const POS = () => {
                     )}
                     {mpesaPaymentStatus === "failed" && (
                       <span className="text-red-700">
-                        ❌ Payment failed. Please try again.
+                        ❌ Payment failed. Please try again or use a different
+                        payment method.
                       </span>
                     )}
                   </div>
@@ -788,10 +817,17 @@ const POS = () => {
                   className="flex-1 btn-primary disabled:opacity-50"
                 >
                   {processing ? (
-                    <LoadingSpinner size="small" />
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinner size="small" />
+                      <span className="ml-2">
+                        {paymentMethod === "mpesa"
+                          ? "Processing..."
+                          : "Processing Sale..."}
+                      </span>
+                    </div>
                   ) : paymentMethod === "mpesa" ? (
                     mpesaPaymentStatus === "pending" ? (
-                      "Processing Payment..."
+                      "Waiting for Payment..."
                     ) : (
                       "Send M-Pesa Request"
                     )

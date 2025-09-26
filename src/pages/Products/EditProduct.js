@@ -155,12 +155,6 @@ const EditProduct = () => {
       newErrors.category = "Category is required";
     }
 
-    if (!formData.pricing.cost) {
-      newErrors["pricing.cost"] = "Cost price is required";
-    } else if (formData.pricing.cost < 0) {
-      newErrors["pricing.cost"] = "Cost price cannot be negative";
-    }
-
     if (!formData.pricing.sellingPrice) {
       newErrors["pricing.sellingPrice"] = "Selling price is required";
     } else if (formData.pricing.sellingPrice < 0) {
@@ -173,17 +167,6 @@ const EditProduct = () => {
 
     if (formData.pricing.discount < 0 || formData.pricing.discount > 100) {
       newErrors["pricing.discount"] = "Discount must be between 0 and 100";
-    }
-
-    // Validate selling price is higher than cost
-    if (formData.pricing.cost && formData.pricing.sellingPrice) {
-      if (
-        parseFloat(formData.pricing.sellingPrice) <
-        parseFloat(formData.pricing.cost)
-      ) {
-        newErrors["pricing.sellingPrice"] =
-          "Selling price should be higher than cost price";
-      }
     }
 
     setErrors(newErrors);

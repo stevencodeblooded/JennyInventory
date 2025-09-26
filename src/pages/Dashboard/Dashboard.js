@@ -102,14 +102,14 @@ const Dashboard = () => {
       color: "text-blue-600",
       bgColor: "bg-blue-100",
     },
-    {
-      name: "Customers",
-      value: metrics.totalCustomers || 0,
-      change: 0,
-      icon: UsersIcon,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
-    },
+    // {
+    //   name: "Customers",
+    //   value: metrics.totalCustomers || 0,
+    //   change: 0,
+    //   icon: UsersIcon,
+    //   color: "text-purple-600",
+    //   bgColor: "bg-purple-100",
+    // },
     {
       name: "Products",
       value: metrics.activeProducts || 0,
@@ -147,7 +147,7 @@ const Dashboard = () => {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat) => (
           <div key={stat.name} className="card">
             <div className="flex items-center">
