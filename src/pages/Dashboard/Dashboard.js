@@ -150,6 +150,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat) => (
           <div key={stat.name} className="card">
+            {console.log('stat', stat)}
             <div className="flex items-center">
               <div className={`p-3 rounded-lg ${stat.bgColor}`}>
                 <stat.icon className={`h-6 w-6 ${stat.color}`} />

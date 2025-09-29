@@ -31,6 +31,7 @@ import UserEdit from "./pages/Users/editUser";
 import Settings from "./pages/Settings/Settings";
 import Profile from "./pages/Profile/Profile";
 import LoadingSpinner from "./components/common/LoadingSpinner";
+import UserAdd from "./pages/Users/UserAdd";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredPermission, requiredRole }) => {
@@ -238,6 +239,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredPermission="users.update">
               <UserEdit />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="users/add"
+          element={
+            <ProtectedRoute requiredPermission="users.update">
+              <UserAdd />
             </ProtectedRoute>
           }
         />

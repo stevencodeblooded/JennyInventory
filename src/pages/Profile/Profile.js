@@ -541,7 +541,7 @@ const Profile = () => {
               )}
 
               {/* PIN Setup Tab */}
-              {activeTab === "pin" && (
+              {/* {activeTab === "pin" && (
                 <form onSubmit={handlePinSubmit} className="space-y-6">
                   <div>
                     <h3 className="text-lg font-medium text-secondary-900 mb-4">
@@ -664,7 +664,7 @@ const Profile = () => {
                     </button>
                   </div>
                 </form>
-              )}
+              )} */}
             </div>
           </div>
         </div>

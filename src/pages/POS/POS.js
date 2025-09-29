@@ -1,4 +1,4 @@
-// Improved POS.js with fixed M-Pesa payment flow
+// Updated POS.js with independent scrolling for products and cart
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { productsAPI, salesAPI } from "../../services/api";
@@ -14,6 +14,8 @@ import {
   ShoppingCartIcon,
   BanknotesIcon,
   XMarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 
 const POS = () => {
@@ -31,16 +33,23 @@ const POS = () => {
   const [mpesaPaymentStatus, setMpesaPaymentStatus] = useState(null);
   const [mpesaTransactionId, setMpesaTransactionId] = useState("");
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const productsPerPage = 12;
+
   // Add debugging state
   const [statusCheckCount, setStatusCheckCount] = useState(0);
   const [lastStatusCheck, setLastStatusCheck] = useState(null);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
+      setCurrentPage(1);
       if (searchTerm) {
         searchProducts();
       } else {
@@ -55,11 +64,15 @@ const POS = () => {
     try {
       setLoading(true);
       const response = await productsAPI.getProducts({
-        limit: 50,
+        limit: productsPerPage,
+        page: currentPage,
         status: "active",
         inStock: "true",
       });
+
       setProducts(response.data.data);
+      setTotalProducts(response.data.total || 0);
+      setTotalPages(Math.ceil((response.data.total || 0) / productsPerPage));
     } catch (error) {
       console.error("Failed to fetch products:", error);
       toast.error("Failed to load products");
@@ -73,14 +86,24 @@ const POS = () => {
       setLoading(true);
       const response = await productsAPI.getProducts({
         search: searchTerm,
-        limit: 50,
+        limit: productsPerPage,
+        page: currentPage,
         status: "active",
       });
+
       setProducts(response.data.data);
+      setTotalProducts(response.data.total || 0);
+      setTotalPages(Math.ceil((response.data.total || 0) / productsPerPage));
     } catch (error) {
       console.error("Failed to search products:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      setCurrentPage(newPage);
     }
   };
 
@@ -423,12 +446,73 @@ const POS = () => {
       ? (parseFloat(amountPaid) || 0) - totals.subtotal
       : 0;
 
+  // Pagination component
+  const PaginationControls = () => (
+    <div className="flex items-center justify-between p-4 bg-white border-t border-secondary-200">
+      <div className="text-sm text-secondary-600">
+        Showing{" "}
+        {Math.min((currentPage - 1) * productsPerPage + 1, totalProducts)} to{" "}
+        {Math.min(currentPage * productsPerPage, totalProducts)} of{" "}
+        {totalProducts} products
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="flex items-center px-3 py-1 text-sm border border-secondary-300 rounded-md hover:bg-secondary-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ChevronLeftIcon className="h-4 w-4 mr-1" />
+          Previous
+        </button>
+
+        <div className="flex items-center space-x-1">
+          {[...Array(Math.min(totalPages, 7))].map((_, index) => {
+            let pageNum;
+            if (totalPages <= 7) {
+              pageNum = index + 1;
+            } else if (currentPage <= 4) {
+              pageNum = index + 1;
+            } else if (currentPage >= totalPages - 3) {
+              pageNum = totalPages - 6 + index;
+            } else {
+              pageNum = currentPage - 3 + index;
+            }
+
+            return (
+              <button
+                key={pageNum}
+                onClick={() => handlePageChange(pageNum)}
+                className={`px-3 py-1 text-sm border rounded-md ${
+                  currentPage === pageNum
+                    ? "bg-primary-500 text-white border-primary-500"
+                    : "border-secondary-300 hover:bg-secondary-50"
+                }`}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="flex items-center px-3 py-1 text-sm border border-secondary-300 rounded-md hover:bg-secondary-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+          <ChevronRightIcon className="h-4 w-4 ml-1" />
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="h-full flex">
-      {/* Products Section */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-white border-b border-secondary-200 p-4">
+    <div className="h-screen flex bg-secondary-50">
+      {/* Products Section - Takes remaining space */}
+      <div className="flex-1 flex flex-col bg-white">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 bg-white border-b border-secondary-200 p-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-secondary-900">
               Point of Sale
@@ -452,89 +536,101 @@ const POS = () => {
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <LoadingSpinner />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {products.map((product) => (
-                <div
-                  key={product._id}
-                  onClick={() => addToCart(product)}
-                  className="bg-white border border-secondary-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer flex flex-col"
-                >
-                  <div className="aspect-square bg-secondary-100 rounded-lg mb-3 flex items-center justify-center">
-                    {product.images?.[0]?.url ? (
-                      <img
-                        src={product.images[0].url}
-                        alt={product.name}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="text-secondary-400 text-center">
-                        <div className="text-2xl mb-1">📦</div>
-                        <div className="text-xs">No Image</div>
+        {/* Products Grid - Scrollable Content */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4">
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <LoadingSpinner />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {products.map((product) => (
+                    <div
+                      key={product._id}
+                      onClick={() => addToCart(product)}
+                      className="bg-white border border-secondary-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer flex flex-col"
+                    >
+                      <div className="aspect-square bg-secondary-100 rounded-lg mb-3 flex items-center justify-center">
+                        {product.images?.[0]?.url ? (
+                          <img
+                            src={product.images[0].url}
+                            alt={product.name}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="text-secondary-400 text-center">
+                            <div className="text-2xl mb-1">📦</div>
+                            <div className="text-xs">No Image</div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  <div className="flex flex-col flex-1">
-                    <h3 className="font-medium text-secondary-900 mb-1 line-clamp-1">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-secondary-600 mb-2 truncate">
-                      SKU: {product.sku}
-                    </p>
-                    <div className="mt-auto space-y-1">
-                      <div className="text-lg font-bold text-primary-600">
-                        {formatCurrency(product.pricing.sellingPrice)}
-                      </div>
-                      <div className="text-xs text-right text-green-800 font-semibold">
-                        Stock: {product.inventory.currentStock}
+                      <div className="flex flex-col flex-1">
+                        <h3 className="font-medium text-secondary-900 mb-1 line-clamp-1">
+                          {product.name}
+                        </h3>
+                        <p className="text-sm text-secondary-600 mb-2 truncate">
+                          SKU: {product.sku}
+                        </p>
+                        <div className="mt-auto space-y-1">
+                          <div className="text-lg font-bold text-primary-600">
+                            {formatCurrency(product.pricing.sellingPrice)}
+                          </div>
+                          <div className="text-xs text-right text-green-800 font-semibold">
+                            Stock: {product.inventory.currentStock}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {!loading && products.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-secondary-400 mb-4">
-                <MagnifyingGlassIcon className="h-12 w-12 mx-auto" />
-              </div>
-              <p className="text-secondary-600">
-                {searchTerm ? "No products found" : "No products available"}
-              </p>
+              {!loading && products.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="text-secondary-400 mb-4">
+                    <MagnifyingGlassIcon className="h-12 w-12 mx-auto" />
+                  </div>
+                  <p className="text-secondary-600">
+                    {searchTerm ? "No products found" : "No products available"}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Fixed Pagination at bottom */}
+          {!loading && products.length > 0 && totalPages > 1 && (
+            <div className="flex-shrink-0">
+              <PaginationControls />
             </div>
           )}
         </div>
       </div>
 
-      {/* Cart Section */}
+      {/* Cart Section - Fixed width, smaller height */}
       <div
         className="w-96 bg-white border-l border-secondary-200 flex flex-col"
-        style={{ height: "60vh" }}
+        style={{ maxHeight: "80vh" }}
       >
-        <div className="p-4 border-b border-secondary-200">
+        {/* Cart Header - Fixed */}
+        <div className="flex-shrink-0 p-4 border-b border-secondary-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-secondary-900">Cart</h2>
             {cart.length > 0 && (
-              <span className="ml-2 bg-primary-100 text-primary-800 text-xs font-medium px-2 py-1 rounded-full">
-                {cart.length}
-              </span>
-            )}
-            {cart.length > 0 && (
-              <button
-                onClick={clearCart}
-                className="text-red-600 hover:text-red-700 text-sm"
-              >
-                Clear All
-              </button>
+              <>
+                <span className="ml-2 bg-primary-100 text-primary-800 text-xs font-medium px-2 py-1 rounded-full">
+                  {cart.length}
+                </span>
+                <button
+                  onClick={clearCart}
+                  className="text-red-600 hover:text-red-700 text-sm ml-auto"
+                >
+                  Clear All
+                </button>
+              </>
             )}
           </div>
 
@@ -548,7 +644,8 @@ const POS = () => {
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col min-h-10">
+        {/* Cart Content - Scrollable */}
+        <div className="flex-1 flex flex-col min-h-0">
           {cart.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-4">
               <div className="text-center">
@@ -563,8 +660,9 @@ const POS = () => {
             </div>
           ) : (
             <>
-              <div className="flex-1 overflow-y-auto p-4 pb-0">
-                <div className="space-y-3 pb-4">
+              {/* Cart Items - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="space-y-3">
                   {cart.map((item) => (
                     <div
                       key={item.product}
@@ -626,6 +724,7 @@ const POS = () => {
                 </div>
               </div>
 
+              {/* Cart Total and Checkout - Fixed at bottom */}
               <div className="flex-shrink-0 border-t border-secondary-200 p-4 bg-white">
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-lg font-bold pt-2">
